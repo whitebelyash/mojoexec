@@ -14,6 +14,7 @@ mojoexec_renderspec_t mojoexec_renderspec;
 const char* mojoexec_native_dir = NULL;
 char* native_egl_path = NULL;
 bool egl_use_bypass = false;
+bool use_spfew = false;
 
 static void save_jvm_string(JNIEnv* env, char** target, jstring str) {
     if(*target != NULL) free(*target);
@@ -33,6 +34,7 @@ Java_git_artdeell_mojoexec_MojoExec_prepareEgl(JNIEnv *env, jclass clazz, jstrin
                                                jint gles_version) {
     save_jvm_string(env, &native_egl_path, egl_path);
     if(native_egl_path == NULL) return false;
+    if(use_spfew) setenv("SFPEW_EGL", native_egl_path, true);
     if(use_bypass && !linker_ns_load(mojoexec_native_dir)) return false;
     egl_use_bypass = use_bypass;
     void* preload_handle = mojoexec_acq_egl_handle();
@@ -63,7 +65,13 @@ Java_git_artdeell_mojoexec_MojoExec_setDisplayParams(JNIEnv *env, jclass clazz, 
 
 void* mojoexec_acq_egl_handle() {
     int flags = RTLD_LOCAL | RTLD_NOW;
-    if(egl_use_bypass) return linker_ns_dlopen(native_egl_path, flags);
-    else return dlopen(native_egl_path, flags);
+    char* lib = use_spfew ? "libSimpleFPEWrapper.so" : native_egl_path;
+    if(egl_use_bypass) return linker_ns_dlopen(lib, flags);
+    else return dlopen(lib, flags);
 }
 
+
+JNIEXPORT void JNICALL
+Java_git_artdeell_mojoexec_MojoExec_setEnableSfpew(JNIEnv *env, jclass clazz, jboolean enable) {
+    use_spfew = enable;
+}
