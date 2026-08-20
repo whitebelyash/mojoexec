@@ -18,6 +18,7 @@
 
 static bool custom_driver_enabled = false;
 static char* driver_override = NULL;
+static char* config_override = NULL;
 
 #ifdef ENABLE_VULKAN_OVERRIDE
 bool load_vulkan_driver() {
@@ -28,6 +29,9 @@ bool load_vulkan_driver() {
     if(!linker_ns_load(mojoexec_native_dir)) return NULL;
     void* linkerhook = linker_ns_dlopen("liblinkerhook.so", RTLD_LOCAL | RTLD_NOW);
     if(linkerhook == NULL) return NULL;
+    // Override qgl_config path. This lib might fail loading, but that's ok
+    void* fopen_hook = linker_ns_dlopen("libmojoexec_fopen_hook.so", RTLD_GLOBAL | RTLD_NOW);
+    if(!fopen_hook) printf("MojoExec: failed to hook fopen!\n");
     char* driver_library = driver_override ? driver_override : DEFAULT_VULKAN_DRIVER;
     void* driver_handle = linker_ns_dlopen(driver_library, RTLD_LOCAL | RTLD_NOW);
     if(driver_handle == NULL) {
@@ -90,4 +94,19 @@ Java_git_artdeell_mojoexec_MojoExec_preloadVulkan(JNIEnv *env, jclass clazz) {
 JNIEXPORT void JNICALL
 Java_git_artdeell_mojoexec_MojoExec_overrideVulkanDriverPath(JNIEnv *env, jclass clazz, jstring driver_library){
     save_jvm_string(env, &driver_override, driver_library);
+}
+
+// This function is directly tied to Adreno Vulkan driver hence it's located here
+JNIEXPORT void JNICALL
+Java_git_artdeell_mojoexec_MojoExec_overrideQglConfigPath(JNIEnv *env, jclass clazz,
+                                                          jstring config_path) {
+    save_jvm_string(env, &config_override, config_path);
+}
+
+FILE* mojoexec_acq_qglconfig_handle(const char* mode) {
+    if(config_override) {
+        printf("Overriding QGL config path: %s\n", config_override);
+        return fopen(config_override, mode);
+    }
+    return NULL;
 }
