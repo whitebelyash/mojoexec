@@ -3,6 +3,7 @@
 //
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifndef POJAVLAUNCHER_MOJOEXEC_H
 #define POJAVLAUNCHER_MOJOEXEC_H
@@ -20,5 +21,7 @@ extern mojoexec_renderspec_t mojoexec_renderspec;
 extern const char* mojoexec_native_dir;
 void* mojoexec_acq_vulkan_handle();
 void* mojoexec_acq_egl_handle();
+
+FILE* mojoexec_acq_qglconfig_handle(const char* mode);
 
 #endif //POJAVLAUNCHER_MOJOEXEC_H

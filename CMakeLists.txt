@@ -13,6 +13,7 @@ add_library(mojoexec SHARED
 target_include_directories(mojoexec PRIVATE ".")
 target_include_directories(mojoexec PUBLIC include)
 
+
 target_link_libraries(mojoexec PRIVATE log)
 
 if(CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
@@ -26,8 +27,16 @@ if(CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
     target_link_options(linkerhook PRIVATE "-Wl,-z,global")
 endif()
 
+
 target_link_options(mojoexec PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/version.script")
 
 set_target_properties(mojoexec PROPERTIES
         LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/version.script"
 )
+
+add_library(mojoexec_fopen_hook SHARED
+        driver_helper/fopen_hook.c)
+target_include_directories(mojoexec_fopen_hook PUBLIC include)
+target_include_directories(mojoexec_fopen_hook PRIVATE ".")
+target_link_options(mojoexec_fopen_hook PRIVATE "-Wl,-z,global")
+target_link_libraries(mojoexec_fopen_hook PRIVATE mojoexec)
